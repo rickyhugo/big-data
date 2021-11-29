@@ -1,0 +1,215 @@
+---
+title: "Homework 2"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*.
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+## Read data
+
+```{r}
+library(ISLR)
+library(cluster)
+library(factoextra)
+```
+```{r}
+# read data
+nci.labs=NCI60$labs
+nci.data=NCI60$data
+```
+```{r}
+# investigate labels
+table(nci.labs)
+```
+
+```{r}
+# scale data
+sd.data = scale(nci.data)
+```
+
+
+# Task 2
+## Task 2a)
+```{r}
+# distance matrix of standardized data
+data.dist=dist(sd.data)
+```
+
+```{r}
+# hierarchical clustering
+png('plots/hc_complete.png', res=100, width=640)
+par(mar = c(1, 2, 2, 1))  
+plot(
+  hclust(data.dist, method="complete"),
+  labels=nci.labs, main="Complete Linkage",
+  xlab="", sub="",ylab="", cex=0.4, cex.axis=0.8
+)
+```
+
+```{r}
+png('plots/hc_average.png', res=100, width=640)
+par(mar = c(1, 2, 2, 1))  
+plot(
+  hclust(data.dist, method="average"),
+  labels=nci.labs, main="Average Linkage",
+  xlab="", sub="",ylab="", cex=0.4, cex.axis=0.8
+)
+```
+
+```{r}
+png('plots/hc_single.png', res=100, width=640)
+par(mar = c(1, 2, 2, 1))  
+plot(
+  hclust(data.dist, method="single"),
+  labels=nci.labs, main="Single Linkage",
+  xlab="", sub="",ylab="", cex=0.4, cex.axis=0.8
+)
+```
+
+```{r}
+# cluster output
+hc.out=hclust(data.dist)
+
+# cut dendrogram to four clusters
+hc.clusters = cutree(hc.out, 4)
+
+# print table of cancer types within each cluster
+t(table(hc.clusters, nci.labs))
+
+```
+```{r}
+# visualize cut-off dendrogram
+png('plots/hc_cutoff_4.png', res=100, width=640)
+par(mar = c(1, 2, 2, 1))
+cl_members <- cutree(tree=hc.out, k=4)
+plot(hc.out, labels=nci.labs, cex=0.4, cex.axis=0.8, sub="", xlab="")
+rect.hclust(hc.out, k=4, which=1:4, border=2:5, cluster=cl_members)
+```
+
+
+## Task 2b)
+```{r}
+set.seed(2)
+
+# K-means clustering
+km.out = kmeans(sd.data, 4, nstart=20)
+
+# extract clusters
+km.clusters = km.out$cluster
+
+# print K-mean against hierarchical clusters
+table(km.clusters, hc.clusters) 
+```
+
+
+## Task 2c)
+```{r}
+# silhouette plot
+png('plots/silhouette.png', res=100, width=640)
+par(mar = c(6, 2, 4, 2))
+plot(
+  silhouette(km.clusters, data.dist),
+  col=2:5, border=NA, main=""
+)
+```
+
+
+```{r}
+set.seed(2)
+
+# built-in cluster optimizer - Silhouette
+png("plots/ave_silhouette_plot.png", height=360, width=640)
+fviz_nbclust(sd.data, kmeans, method='silhouette', k.max=15, print.summary=F)
+```
+
+```{r}
+set.seed(2)
+
+# built-in cluster optimizer - WSS
+png("plots/wss_plot.png", height=360, width=640)
+fviz_nbclust(sd.data, kmeans, method='wss', k.max=15, print.summary=F)
+```
+
+
+```{r}
+set.seed(2)
+
+optimal_k = 5
+
+# K-means clustering
+km.out.optimal = kmeans(sd.data, optimal_k, nstart=20)
+
+# extract clusters
+km.clusters.optimal = km.out.optimal$cluster
+```
+
+```{r}
+# visualize clusters
+png('plots/k-means_5.png', res=100, width=640)
+fviz_cluster(
+  km.out.optimal, data=sd.data,
+  geom = "point",
+  ellipse.type = "convex", 
+  ggtheme = theme_bw()
+)
+```
+```{r}
+set.seed(2)
+
+optimal_k = 4
+
+# K-means clustering
+km.out.optimal = kmeans(sd.data, optimal_k, nstart=20)
+
+# extract clusters
+km.clusters.optimal = km.out.optimal$cluster
+
+# print table of cancer types within each cluster
+t(table(km.clusters.optimal, nci.labs))
+```
+
+```{r}
+# visualize clusters
+png('plots/k-means_4.png', res=100, width=640)
+fviz_cluster(
+  km.out.optimal, data=sd.data,
+  geom = "point",
+  ellipse.type = "convex", 
+  ggtheme = theme_bw()
+)
+```
+
+```{r}
+set.seed(2)
+
+optimal_k = 14
+
+# K-means clustering
+km.out.optimal = kmeans(sd.data, optimal_k, nstart=20)
+
+# extract clusters
+km.clusters.optimal = km.out.optimal$cluster
+
+# print table of cancer types within each cluster
+t(table(km.clusters.optimal, nci.labs))
+```
+
+
+```{r}
+# visualize clusters
+#png('plots/k-means_4.png', res=100, width=640)
+fviz_cluster(
+  km.out.optimal, data=sd.data,
+  geom = "point",
+  ellipse.type = "convex", 
+  ggtheme = theme_bw()
+)
+```
